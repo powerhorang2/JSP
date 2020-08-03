@@ -19,42 +19,23 @@
  %>
 <%
 	String strI_board = request.getParameter("i_board");
-	if(strI_board == null) {
-%>
-	<script>
-		alert('잘 못 된 접근입니다.')
-		location.href='/jsp/boardList.jsp'
-	</script>
-	
-<% 
-	return; // 밑에 코드들을 실행 시키지 않기 위해;
-	}
 	int i_board = Integer.parseInt(strI_board);	
 
-	BoardVO vo = new BoardVO();
+	
 
 	Connection con = null; // 자바와 데이터베이스 연결 담당
 	PreparedStatement ps = null; // 쿼리문 완성 + 쿼리문 실행
 	ResultSet rs = null; // SELECT문의 결과를 담는다.
 	
-	String sql = " SELECT title, ctnt, i_student FROM t_board WHERE i_board = ? ";   // + strI_board;
-	
+	String sql = " DELETE FROM t_board WHERE i_board = ?";   // + strI_board;
+
+	int result = -1;
 	try {
 		con = getCon();
 		ps = con.prepareStatement(sql);
 		ps.setInt(1, i_board); // 쿼리문의 첫번째 ?에 i_board를 집어넣는다. 
-		// ps.setString(1, strI_board); // 자동으로 ""를 붙여준다.
-		rs = ps.executeQuery(); // executeQuery(); : (ResultSet 타입임);
-		if(rs.next()){
-			String title = rs.getNString("title");
-			String ctnt = rs.getNString("ctnt");
-			int i_student = rs.getInt("i_student");
-				
-			vo.setTitle(title);
-			vo.setCtnt(ctnt);
-			vo.setI_student(i_student);	
-		}
 		
+		result = ps.executeUpdate();
 		
 	} catch(Exception e) {
 		e.printStackTrace();
@@ -63,46 +44,16 @@
 		if(ps != null) { try { ps.close(); } catch (Exception e) {} }
 		if(con != null) { try { con.close(); } catch (Exception e) {} }
 	}
+	System.out.println("result : " + result );
+	switch(result) {
+	case -1 : 
+		response.sendRedirect("/jsp/boardDetail.jsp?err=-1");
+		break;
+	case 0 :
+		response.sendRedirect("/jsp/boardDetail.jsp?err=0");
+		break;
+	case 1 :
+		response.sendRedirect("/jsp/boardList.jsp");
+		break;
+	}
 %>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>상세 페이지</title>
-<style>
-	table { border: 1px solid black; }
-	th { border: 1px solid black; }
-</style>
-</head>
-<body>
-	<div>상세 페이지 : <%=strI_board %></div>
-	<table>
-		<tr>
-			<th>번호</th>
-			<th>제목</th>
-			<th>글</th>
-			<th>작성자</th>
-		</tr>
-		<tr>
-			<th><%=strI_board %></th>
-			<th><%=vo.getTitle() %></th>
-			<th><%=vo.getCtnt() %></th>
-			<th><%=vo.getI_student() %></th>
-		</tr>
-	</table>
-	<div>
-		<a href="/jsp/boardList.jsp">리스트로 가기</a>
-		<a href="#" onclick="procDel(<%=i_board%>)">삭제</a>
-		<a href=/jsp/boardMod.jsp?i_board(<%=i_board %>)>수정</a>
-	</div>
-	<script>
-		function procDel(i_board) {
-			// alert('i_board : ' + i_board);
-			if(confirm('삭제하시겠습니까?')) {
-				location.href = '/jsp/boardDel.jsp?i_board=' + i_board;
-			}
-			
-		}
-	</script>
-</body>
-</html>

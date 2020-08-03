@@ -1,7 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>  
+    pageEncoding="UTF-8"%>
 <%@ page import="java.sql.*" %>
-<%@ page import="java.util.*" %>
 <%@ page import="com.koreait.web.BoardVO" %>
 <%! // !(스크립트릿)를 붙여주면 메소드 바깥에 내용들을 적어줌 : 전역변수, 메소드 같은 것들은 여기다가 만들어줘야함. 
 	// @를 붙여주면 세팅
@@ -17,66 +16,60 @@
 		System.out.println("접속 성공!");
 		return con;
 	}
- %>
-<% //boardList파일안의 메소드
-	// 스코프 때문에 변수 선언을 try문 밖에서 했다.
-	List<BoardVO> boardList = new ArrayList();
+%>
+<%
+
+	String title = request.getParameter("title"); // 외부로부터 값을 풀고 받기위해
+	String ctnt = request.getParameter("ctnt");
+	String strI_student = request.getParameter("i_student"); 
+	
+	if("".equals(title) || "".equals(ctnt) || "".equals(strI_student)) {
+		response.sendRedirect("/jsp/boardWrite.jsp?err=10");
+		return;
+	}
+	
+	int i_student = Integer.parseInt(strI_student);	// strI_student에 숫자만 있으면 에러가 안터지는데 문자가 하나라도 섞여있으면 에러가 터짐
+	
+	
 	
 	Connection con = null; // 자바와 데이터베이스 연결 담당
 	PreparedStatement ps = null; // 쿼리문 완성 + 쿼리문 실행
-	ResultSet rs = null; // SELECT문의 결과를 담는다.
 	
-	String sql = " SELECT i_board, title FROM t_board ";
 	
+	String sql = " INSERT INTO t_board (i_board,title,ctnt,i_student) "
+				+ " SELECT nvl(max(i_board),0) + 1,?,?,? "
+				+ " FROM t_board ";
+	int result = -1;
 	try {
 		con = getCon();
 		ps = con.prepareStatement(sql);
-		rs = ps.executeQuery(); // executeQuery(); : (ResultSet 타입임);
-		while(rs.next()) {
-			int i_board = rs.getInt("i_board");
-			String title = rs.getNString("title");
-			BoardVO vo = new BoardVO(); /* ************중요**************while문 안에 선언해야함, while문 밖에서 선언하면 계속 똑같은 값만 리턴 */
-			vo.setI_board(i_board);
-			vo.setTitle(title);
-			
-			boardList.add(vo);
-		}
+		ps.setString(1, title);
+		ps.setString(2, ctnt);
+		ps.setInt(3, i_student);
+		result = ps.executeUpdate();
+		
+		// ps.setString(1, strI_board); // 자동으로 ""를 붙여준다.
+				
+		
 	} catch(Exception e) {
 		e.printStackTrace();
 	} finally {  // 열었으면 반드시 닫아줘야하는데 생성한 반대 순서로 닫아준다. 3개를 따로 닫아줘야지 하나 오류가 떠도 나머지를 닫을 수 있음.
-		if(rs != null) { try { rs.close(); } catch (Exception e) {} }
 		if(ps != null) { try { ps.close(); } catch (Exception e) {} }
 		if(con != null) { try { con.close(); } catch (Exception e) {} }
 	}
+	int err = 0;
+	switch(result) {
+	case 1:
+		response.sendRedirect("/jsp/boardList.jsp"); // 2번 실행되게 되면 에러터짐으로 꼭 한번만 실행되게 할 것
+		return;
+	case 0:
+		err = 10;
+		break;
+	case -1:
+		err = 20;
+		break;
+	}
+	response.sendRedirect("/jsp/boardWrite.jsp?err=" + err);
 	
 %>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>게시판</title>
 
-</head>
-<body>
-	<div>
-		게시판 리스트<a href="/jsp/boardWrite.jsp"><button>글쓰기</button></a>  <!-- /jsp/boardWrite.jsp는  화면 띄우는 용도-->
-	</div>
-	<table>
-		<tr>
-			<th>No</th>
-			<th>제목</th>
-		</tr>
-		<% for(BoardVO vo : boardList) { %>
-		<tr>
-			<th><%=vo.getI_board() %></th>
-			<th>
-				<a href="/jsp/boardDetail.jsp?i_board=<%=vo.getI_board() %>"> 
-					<%=vo.getTitle() %>
-				</a>
-			</th>
-		</tr>
-		<% } %>
-	</table>
-	
-</body>
-</html>
