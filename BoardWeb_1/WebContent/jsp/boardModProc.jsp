@@ -18,18 +18,18 @@
 	}
 %>
 <%
-
 	String title = request.getParameter("title"); // 외부로부터 값을 풀고 받기위해
 	String ctnt = request.getParameter("ctnt");
-	String strI_student = request.getParameter("i_student"); 
+	String strI_student = request.getParameter("i_student");
+	String strI_board = request.getParameter("i_board");
 	
 	if("".equals(title) || "".equals(ctnt) || "".equals(strI_student)) {
-		response.sendRedirect("/jsp/boardWrite.jsp?err=10");
+		response.sendRedirect("/jsp/boardMod.jsp?err=10");
 		return;
 	}
 	
 	int i_student = Integer.parseInt(strI_student);	// strI_student에 숫자만 있으면 에러가 안터지는데 문자가 하나라도 섞여있으면 에러가 터짐
-	
+	int i_board = Integer.parseInt(strI_board);
 	
 	
 	Connection con = null; // 자바와 데이터베이스 연결 담당
@@ -37,15 +37,17 @@
 	
 	
 	String sql = " UPDATE t_board "
-				+ " SET title=?, ctnt=?,i_student=? "
-				+ " WHERE i_board ";
+				+ " SET title=?, ctnt=?, i_student=? "
+				+ " WHERE i_board=? ";
 	int result = -1;
 	try {
 		con = getCon();
 		ps = con.prepareStatement(sql);
-		ps.setString(1, title);
-		ps.setString(2, ctnt);
+		ps.setNString(1, title);
+		ps.setNString(2, ctnt);
 		ps.setInt(3, i_student);
+		ps.setInt(4, i_board);
+		
 		result = ps.executeUpdate();
 		
 		// ps.setString(1, strI_board); // 자동으로 ""를 붙여준다.
@@ -60,7 +62,7 @@
 	int err = 0;
 	switch(result) {
 	case 1:
-		response.sendRedirect("/jsp/boardList.jsp"); // 2번 실행되게 되면 에러터짐으로 꼭 한번만 실행되게 할 것
+		response.sendRedirect("/jsp/boardDetail.jsp?i_board=" + i_board); // 2번 실행되게 되면 에러터짐으로 꼭 한번만 실행되게 할 것
 		return;
 	case 0:
 		err = 10;
@@ -69,7 +71,7 @@
 		err = 20;
 		break;
 	}
-	response.sendRedirect("/jsp/boardWrite.jsp?err=" + err);
+	response.sendRedirect("/jsp/boardMod.jsp?err=" + err);
 	
 %>
 
